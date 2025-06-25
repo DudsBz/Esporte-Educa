@@ -8,74 +8,111 @@ import flet as ft
 from database import esportes
 
 def main(page: ft.Page):
+    list_campeonatos_ativos = []
+    escolha_esporte = ft.Dropdown(
+            options=[
+                ft.dropdown.Option(esporte['nome'], 
+                #key=esporte['id']
+                )
+                for esporte in esportes
+            ],
+            width=250,
+            label="Selecione um esporte",
+            hint_text="Selecione um esporte",
+        )
     def iniciar_campeonato(e):
-        # Função para iniciar o campeonato
-
         dlg = ft.AlertDialog(
             content=ft.Container(
                 width=400,
-                height=200,
+                height=250,
                 content=ft.Column(
                     [
-                        ft.Text("Selecione o esporte para iniciar o campeonato:", size=12),
-                        ft.Dropdown(
-                            options=[
-                                ft.dropdown.Option(
-                                    esporte['nome'], 
-                                    #key=esporte['id']
-                                )
-                                for esporte in esportes
-                            ],
-                            width=250,
-                            label="Selecione um esporte",
-                            hint_text="Selecione um esporte",
-                        ),
-                        ft.TextButton("Iniciar", on_click=cadastro_time),
+                        ft.Text("Selecione o esporte:", size=12),
+                        escolha_esporte,
                     ],
                     alignment=ft.MainAxisAlignment.CENTER,
                 ),
             ),
-            
-            title=ft.Text("Iniciar Campeonato", size=20),
+            title=ft.Text("Cadastrar Time", size=20),
             actions=[
+                ft.TextButton("Iniciar", on_click=cadastrar_time),
                 ft.TextButton("Fechar", on_click=lambda e: page.close(dlg)),
             ],
         )
-        page.open(dlg)
+        
 
-    def cadastro_time(e):
-        # Função para cadastrar o time
-        # Aqui você pode implementar a lógica para cadastrar o time
-        # Por exemplo, abrir um diálogo para inserir os dados do time
-        x = int(esportes['id']['participantes_max_por_time'])  # Número máximo de jogadores por time
-        # A variável x é definida como o número máximo de jogadores por time do primeiro esporte da lista esportes
-        nome_time = ft.TextField(label="Nome do Time", width=250),
-        nome_capitao = ft.TextField(label="Nome do Capitão", width=250),
-        num_jogadores = ft.TextField(label="Número de Jogadores", width=250, keyboard_type=ft.KeyboardType.NUMBER),
-        for i in range(1, x):
-            nome_jogadores = ft.TextField(label="Primeiro e Segundo Nome", width=250),
+        page.open(dlg)
+    def exibir_campeonatos(e):
+        print(list_campeonatos_ativos)
+        if list_campeonatos_ativos:
+            lista = ft.Column([
+                ft.TextButton(
+                    f"{c['esporte']}",
+                    on_click=adicionar_times,
+            )   for c in list_campeonatos_ativos
+                
+        ])
+        else:
+            lista = ft.Text("Nenhum campeonato ativo.")
+
+        exibir = ft.AlertDialog(
+            title=ft.Text("Campeonatos Ativos"),
+            content=lista
+        )
+        page.open(exibir)
+    def cadastrar_time(e):
+        # Função para iniciar o cadastro de time
+        # Campos do formulário
+        nome_time = ft.TextField(label="Nome do Time", width=300)
+        nome_capitao = ft.TextField(label="Nome do Capitão", width=300)
+        nomes_jogadores = ft.TextField(
+            label="Nomes dos Jogadores (um por linha)", 
+            multiline=True, 
+            min_lines=4, 
+            max_lines=10, 
+            width=300
+        )
+        
+
+        def salvar_time(ev):
+            time = {
+                "esporte": escolha_esporte.value,
+                "nome_time": nome_time.value,
+                "capitao": nome_capitao.value,
+                "jogadores": [j.strip() for j in nomes_jogadores.value.split('\n') if j.strip()]
+            }
+            list_campeonatos_ativos.append(time)
+            print("Time cadastrado:", time)
+            page.close(dlg)
+            
+            # Aqui você pode adicionar o time a uma lista ou banco de dados
+
+
         dlg = ft.AlertDialog(
             content=ft.Container(
                 width=400,
-                height=200,
+                height=350,
                 content=ft.Column(
                     [
-                        ft.Text("Cadastro de Time", size=12),
-                        ft.TextButton("Cadastrar", on_click=lambda e: page.close(dlg)),
+                        ft.Text("Preencha os dados do time:", size=12),
+                        nome_time,
+                        nome_capitao,
+                        nomes_jogadores,
                     ],
                     alignment=ft.MainAxisAlignment.CENTER,
                 ),
-                
-
             ),
             title=ft.Text("Cadastro de Time", size=20),
             actions=[
-                ft.TextButton("Fechar", on_click=lambda e: page.close(dlg)),
+                ft.TextButton("Salvar", on_click=salvar_time),
+                ft.TextButton("Cancelar", on_click=lambda e: page.close(dlg)),
             ],
         )
+
         page.open(dlg)
     
-
+    def adicionar_times(e):
+        pass
     def mostrardescricao(e):
         # Função para mostrar a descrição do esporte
         # Aqui você pode implementar a lógica para exibir mais informações sobre o esporte
@@ -167,6 +204,11 @@ def main(page: ft.Page):
                         text="Iniciar Campeonato",
                         icon=ft.icons.SPORTS_FOOTBALL,
                         on_click=iniciar_campeonato,
+                    ),
+                    ft.PopupMenuItem(
+                        text="Campeonatos Ativos",
+                        icon=ft.icons.SPORTS_GYMNASTICS,
+                        on_click=exibir_campeonatos
                     ),
                 ],
             ),
