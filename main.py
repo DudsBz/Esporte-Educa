@@ -4,11 +4,30 @@
  Podendo ser elas: futebol, vôlei, basquete, handebol, entre outros.
  O sistema será desenvolvido em Python, utilizando o framework Flet para a interface gráfica.'''
 
+"""
+Observaões =>
+    Você pode criar uma interface de usuário (UI) para o seu programa com os controles Flet, baseados no Flutter do Google.
+    O Flet vai além de simplesmente encapsular widgets do Flutter. Ele adiciona seu próprio toque combinando widgets menores, simplificando complexidades, 
+    implementando as melhores práticas de UI e aplicando padrões sensatos. 
+    Isso garante que seus aplicativos tenham uma aparência elegante e refinada, sem exigir esforços adicionais de design da sua parte.
+
+    O Flet foi criado em 2017, ou seja, não possui muito suporte. Além de que o python não é voltado para essa área de atuação, sendo majoritariamente para análise de dados, backend e etc.
+    Diversas ferramentas que eu tentei fazer com que funcionassem não deram certo pois não consegui nada nem com suporte de IA e nem com suporte que encontrei na internet, tais como a própria documentação do flet
+    Um exemplo é o NavBar/rodapé, eu queria usá-lo para navegação que estão explicitas nele, mas por não conseguir desenvolver eu optei por deixar assim mesmo, deixar por estilo, achei bonito.
+
+""" 
+
 import flet as ft
 from database import esportes
+from time import sleep
 
 def main(page: ft.Page):
+    # Essa é a lista de campeonatos ativos que serão expostos na tela
+    # É uma variável global que armazena o esporte
     list_campeonatos_ativos = []
+    # Essa é uma lista igual a de cima, com a diferença de ser para cadastro de times
+    list_times_cad = []
+    # escolha_esporte é um ft.Dropdown que vai exibir pro usuário as opções de esportes (ou não esportes) para iniciar um campeonato
     escolha_esporte = ft.Dropdown(
             options=[
                 ft.dropdown.Option(esporte['nome'], 
@@ -33,9 +52,9 @@ def main(page: ft.Page):
                     alignment=ft.MainAxisAlignment.CENTER,
                 ),
             ),
-            title=ft.Text("Cadastrar Time", size=20),
+            title=ft.Text("Iniciar um campeonato", size=20),
             actions=[
-                ft.TextButton("Iniciar", on_click=cadastrar_time),
+                ft.TextButton("Iniciar", on_click=salvar_esporte),
                 ft.TextButton("Fechar", on_click=lambda e: page.close(dlg)),
             ],
         )
@@ -49,6 +68,8 @@ def main(page: ft.Page):
                 ft.TextButton(
                     f"{c['esporte']}",
                     on_click=adicionar_times,
+                    tooltip="Adicionar Time"
+                    
             )   for c in list_campeonatos_ativos
                 
         ])
@@ -60,7 +81,19 @@ def main(page: ft.Page):
             content=lista
         )
         page.open(exibir)
-    def cadastrar_time(e):
+    def configuracoes(e):
+        page.clean()
+        page.add(appbar, navigation_bar)
+    def salvar_esporte(e):
+        esporte_ativo = {
+            "esporte": escolha_esporte.value,
+        }
+        v_esp = esporte_ativo["esporte"]
+        alerta = ft.AlertDialog(
+            content= ft.Text(f"Campeonato de {v_esp} Iniciado!", size=13))
+        list_campeonatos_ativos.append(esporte_ativo)
+        page.open(alerta)
+    def adicionar_times(e):
         # Função para iniciar o cadastro de time
         # Campos do formulário
         nome_time = ft.TextField(label="Nome do Time", width=300)
@@ -72,22 +105,19 @@ def main(page: ft.Page):
             max_lines=10, 
             width=300
         )
-        
 
-        def salvar_time(ev):
+        def salvar_time(e):
             time = {
-                "esporte": escolha_esporte.value,
                 "nome_time": nome_time.value,
                 "capitao": nome_capitao.value,
                 "jogadores": [j.strip() for j in nomes_jogadores.value.split('\n') if j.strip()]
             }
-            list_campeonatos_ativos.append(time)
-            print("Time cadastrado:", time)
+            list_times_cad.append(time["nome_time"])
+            print(time)
+            sleep(1)
             page.close(dlg)
-            
+        
             # Aqui você pode adicionar o time a uma lista ou banco de dados
-
-
         dlg = ft.AlertDialog(
             content=ft.Container(
                 width=400,
@@ -105,14 +135,10 @@ def main(page: ft.Page):
             title=ft.Text("Cadastro de Time", size=20),
             actions=[
                 ft.TextButton("Salvar", on_click=salvar_time),
-                ft.TextButton("Cancelar", on_click=lambda e: page.close(dlg)),
+                ft.TextButton("Sair", on_click=lambda e: page.close(dlg)),
             ],
         )
-
         page.open(dlg)
-    
-    def adicionar_times(e):
-        pass
     def mostrardescricao(e):
         # Função para mostrar a descrição do esporte
         # Aqui você pode implementar a lógica para exibir mais informações sobre o esporte
@@ -129,15 +155,12 @@ def main(page: ft.Page):
             ],
         )
         page.open(dlg)
-        
-
     page.title = "Esporte Educa"
     page.window.width = 550
     page.window.height = 650
-
     # Criar os objetos da página
     #Criando o appbar
-    page.appbar = ft.AppBar(
+    appbar = ft.AppBar(
         leading=ft.Icon(ft.icons.SPORTS),
         leading_width=50,
         title=ft.Text("Esporte Educa"),
@@ -147,7 +170,7 @@ def main(page: ft.Page):
             ft.IconButton(
                 icon=ft.icons.SETTINGS,
                 tooltip="Configurações",
-                #on_click=lambda e: print("Configurações clicadas")
+                on_click=configuracoes
             ),
         ],
     )
@@ -155,9 +178,9 @@ def main(page: ft.Page):
     #Criando o rodapé
     # Essa barra de navegação vai servir pra navegar pelas funcionalidades do app
     # Vai navegar pela página inicial, campeonatos que estão acontecendo e pelas tabelas
-    page.navigation_bar = ft.NavigationBar(
+    navigation_bar = ft.NavigationBar(
         destinations=[
-            ft.NavigationDestination(icon=ft.icons.HOME, label="Início"),
+            ft.NavigationDestination(icon=ft.icons.CAR_CRASH, label="Início"),
             ft.NavigationDestination(icon=ft.icons.SPORTS, label="Campeonatos Ativos"),
             ft.NavigationDestination(icon=ft.icons.TABLE_CHART, label="Tabelas"),
         ],
@@ -219,5 +242,5 @@ def main(page: ft.Page):
         # A lista de esportes é uma coluna que contém todos os esportes
         # e será exibida na página principal
         lista_esporte.controls.append(esporte_componente)
-    page.add(lista_esporte)
+    page.add(appbar, lista_esporte, navigation_bar)
 ft.app(target=main)
